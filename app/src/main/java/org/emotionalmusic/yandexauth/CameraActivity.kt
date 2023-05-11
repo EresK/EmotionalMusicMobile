@@ -1,4 +1,5 @@
 package org.emotionalmusic.yandexauth
+
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -11,13 +12,10 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.video.OutputFileOptions
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import org.emotionalmusic.yandexauth.databinding.ActivityMainBinding
 import org.emotionalmusic.yandexauth.databinding.CameraLayoutBinding
 import java.io.File
-import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -43,7 +41,7 @@ class CameraActivity : AppCompatActivity() {
                 mkdir()
             }
         }
-        return if(mediaDir != null && mediaDir.exists()) mediaDir
+        return if (mediaDir != null && mediaDir.exists()) mediaDir
         else filesDir
     }
 
@@ -56,11 +54,11 @@ class CameraActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.camera_layout)
+
         binding = CameraLayoutBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
-
-        setContentView(R.layout.camera_layout)
 
         if (allPermissionGranted()) {
             startCamera()
@@ -77,7 +75,8 @@ class CameraActivity : AppCompatActivity() {
         }
 
         outputDir = getOutputDir()
-        cameraExecutor = Executors.newSingleThreadExecutor() // обмен информации между двумя потоками
+        cameraExecutor =
+            Executors.newSingleThreadExecutor() // обмен информации между двумя потоками
     }
 
     override fun onDestroy() {
@@ -103,43 +102,48 @@ class CameraActivity : AppCompatActivity() {
     }
 
     private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this) //пытаемся получить жизненный цикл, к которому будем привязываться
-        cameraProviderFuture.addListener(Runnable {
-            val cameraProvider = cameraProviderFuture.get()
-            val preview = Preview.Builder().build().also { // связываем камеру с preview
-                it.setSurfaceProvider(binding.pvCamera.surfaceProvider)
-            }
+        val cameraProviderFuture =
+            ProcessCameraProvider.getInstance(this) //пытаемся получить жизненный цикл, к которому будем привязываться
+        cameraProviderFuture.addListener(
+            Runnable {
+                val cameraProvider = cameraProviderFuture.get()
+                val preview = Preview.Builder().build().also { // связываем камеру с preview
+                    it.setSurfaceProvider(binding.pvCamera.surfaceProvider)
+                }
 
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA // выбираем камеру
-            imageCapture = ImageCapture.Builder().build()
-            try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-        this,
-                    cameraSelector,
-                    preview,
-                    imageCapture
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Bind error", e)
-            }
-        },
-        ContextCompat.getMainExecutor(this))
+                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA // выбираем камеру
+                imageCapture = ImageCapture.Builder().build()
+                try {
+                    cameraProvider.unbindAll()
+                    cameraProvider.bindToLifecycle(
+                        this,
+                        cameraSelector,
+                        preview,
+                        imageCapture
+                    )
+                } catch (e: Exception) {
+                    Log.e(TAG, "Bind error", e)
+                }
+            },
+            ContextCompat.getMainExecutor(this)
+        )
     }
 
     private fun takePhoto() {
-        val imageCapture = imageCapture?:return // проверка, есть ли что сохранять
+        val imageCapture = imageCapture ?: return // проверка, есть ли что сохранять
 
-        val photoFile = File(outputDir,
-        SimpleDateFormat(FILE_FORMAT, Locale.US)
-            .format(System.currentTimeMillis()) + ".jpg")
+        val photoFile = File(
+            outputDir,
+            SimpleDateFormat(FILE_FORMAT, Locale.US)
+                .format(System.currentTimeMillis()) + ".jpg"
+        )
 
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
         imageCapture.takePicture(
             outputOptions,
             ContextCompat.getMainExecutor(baseContext),
-            object: ImageCapture.OnImageSavedCallback { //callback после выполнения фотографии
+            object : ImageCapture.OnImageSavedCallback { //callback после выполнения фотографии
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     val uri = Uri.fromFile(photoFile)
                     val msg = "Photo: $uri"
@@ -148,9 +152,11 @@ class CameraActivity : AppCompatActivity() {
                 }
 
                 override fun onError(exception: ImageCaptureException) {
-                    Toast.makeText(baseContext,
+                    Toast.makeText(
+                        baseContext,
                         "Save error: ${exception.message}",
-                        Toast.LENGTH_SHORT).show()
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         )
